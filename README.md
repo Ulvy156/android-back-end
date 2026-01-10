@@ -1,98 +1,171 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+# 📚 SOP Knowledge Base – Database Design
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This database supports the **Knowledge Base & SOP Viewer** mobile application.
+It handles employee access, SOP documents, versioning, feedback, favorites, and compliance tracking.
 
-## Description
+The goal is to allow company staff to **securely view internal procedures (SOPs)** based on their **role and department**, while keeping a full audit trail of usage.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 🧱 Core Entities
 
-```bash
-$ pnpm install
-```
+### 👤 User
 
-## Compile and run the project
+Stores employee accounts.
 
-```bash
-# development
-$ pnpm run start
+Each user has:
 
-# watch mode
-$ pnpm run start:dev
+* A role (Admin, HR, Staff)
+* A department (HR, IT, Finance, etc)
 
-# production mode
-$ pnpm run start:prod
-```
+Used to:
 
-## Run tests
+* Control access to documents
+* Track activity
+* Send notifications
 
-```bash
-# unit tests
-$ pnpm run test
+---
 
-# e2e tests
-$ pnpm run test:e2e
+### 📄 Document (SOP)
 
-# test coverage
-$ pnpm run test:cov
-```
+Represents an SOP or policy.
 
-## Deployment
+Contains:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+* Title
+* Description
+* Department that owns it
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+A document does **not** store the file directly.
+Instead, it uses **DocumentVersion** to track file updates.
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+---
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 🧾 DocumentVersion
 
-## Resources
+Each SOP update is stored as a new version.
 
-Check out a few resources that may come in handy when working with NestJS:
+Stores:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+* Version number (v1.0, v2.0, etc)
+* PDF file URL
+* Who uploaded it
+* When it was uploaded
 
-## Support
+This allows:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+* Viewing old SOPs
+* Tracking changes
+* Compliance auditing
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 🔐 DocumentPermission
 
-## License
+Controls **who can access what**.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Each record links:
+
+* A document
+* A role (HR, Staff, Manager)
+
+Example:
+
+> “Only HR Managers can see HR Policies”
+
+---
+
+### ⭐ Favorite
+
+Lets users bookmark SOPs for quick access.
+
+Each user can favorite many documents, but only once per document.
+
+---
+
+### 💬 Feedback
+
+Allows employees to:
+
+* Suggest updates
+* Report mistakes
+* Request changes
+
+Each feedback is linked to:
+
+* A user
+* A document
+
+---
+
+### 📜 ActivityLog
+
+Tracks every important action for compliance.
+
+Examples:
+
+* VIEW_DOCUMENT
+* DOWNLOAD
+* SEARCH
+* ADD_FAVORITE
+
+This lets the company know:
+
+> Who accessed what, and when.
+
+---
+
+### 🔔 Notification
+
+Stores push notifications for users.
+
+Used when:
+
+* A new SOP is added
+* An SOP is updated
+
+Each notification is marked as read/unread.
+
+---
+
+## 🔗 How Everything Connects
+
+* A **User** belongs to a role and department
+* A **Document** belongs to a department
+* A **Document** has many **DocumentVersions**
+* A **Document** has many **Permissions** (who can view it)
+* A **User** can:
+
+  * Favorite documents
+  * Give feedback
+  * Generate activity logs
+  * Receive notifications
+
+---
+
+## 🧠 Why this design works
+
+This schema supports all required assignment features:
+
+| Requirement                | Supported |
+| -------------------------- | --------- |
+| Role-based access          | ✅         |
+| Department-based filtering | ✅         |
+| SOP Versioning             | ✅         |
+| PDF Storage                | ✅         |
+| Feedback system            | ✅         |
+| Favorites                  | ✅         |
+| Notifications              | ✅         |
+| Activity logging           | ✅         |
+| Compliance tracking        | ✅         |
+
+It’s simple enough for a student project, but structured enough to look like a real corporate system.
+
+---
+
+If you want, I can also generate:
+
+* ER diagram explanation
+* API endpoints list
+* Or a DB schema section for your report 📊
