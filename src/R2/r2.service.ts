@@ -8,7 +8,6 @@ import { ConfigService } from '@nestjs/config';
 import { S3Client } from '@aws-sdk/client-s3';
 import { createR2Client } from './r2.client';
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE } from './r2.interface';
-import sharp from 'sharp';
 
 @Injectable()
 export class R2Service {
@@ -20,16 +19,6 @@ export class R2Service {
     this.client = createR2Client(config);
     this.bucket = config.get<string>('R2_BUCKET')!;
     this.publicUrl = config.get<string>('R2_PUB_URL')!;
-  }
-
-  private async optimizeImage(buffer: Buffer) {
-    return await sharp(buffer)
-      .resize(1200, 800, {
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
-      .webp({ quality: 75 })
-      .toBuffer();
   }
 
   private validateFile(file: Express.Multer.File) {
@@ -102,8 +91,7 @@ export class R2Service {
       // generate file name
       const key = this.generateFileName(folder);
 
-      const optimizedBuffer = await this.optimizeImage(file.buffer);
-      return await this.putObjectCommand(key, optimizedBuffer);
+      return await this.putObjectCommand(key, file.buffer);
     });
 
     return Promise.all(uploads);
@@ -112,9 +100,8 @@ export class R2Service {
   async uploadSingleFile(file: Express.Multer.File, folder: string = 'rooms') {
     this.validateFile(file);
     const key = this.generateFileName(folder);
-    const optimizedBuffer = await this.optimizeImage(file.buffer);
 
-    return await this.putObjectCommand(key, optimizedBuffer);
+    return await this.putObjectCommand(key, file.buffer);
   }
 
   async deleteMultipleFiles(keys: string[]) {

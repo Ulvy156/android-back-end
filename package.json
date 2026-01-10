@@ -44,9 +44,7 @@
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1",
-    "sanitize-html": "^2.17.0",
-    "sharp": "^0.34.5"
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

@@ -14,7 +14,7 @@ import { UserRole } from 'prisma/generated/enums';
  * (this is NOT your DB user)
  */
 interface JwtTokenPayload {
-  sub: string; // userId
+  sub: number; // userId
   role: UserRole;
 }
 
@@ -22,7 +22,7 @@ interface JwtTokenPayload {
  * Minimal user data used for login
  */
 interface LoginUser {
-  id: string;
+  id: number;
   role: UserRole;
 }
 
