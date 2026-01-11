@@ -1,9 +1,8 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
-import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { corsConfig } from './config/cors.config';
 
 async function bootstrap() {
@@ -17,11 +16,6 @@ async function bootstrap() {
     origin: process.env.FRONT_END_URL ?? 'http://localhost:3000',
     credentials: true,
   });
-
-  // Global JWT guard
-  const reflector = app.get(Reflector);
-  // Apply JWT guard globally
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
 
   // enable validate
   app.useGlobalPipes(

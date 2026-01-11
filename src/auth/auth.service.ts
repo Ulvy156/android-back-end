@@ -7,7 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { UserRole } from 'prisma/generated/enums';
+import { Role } from 'prisma/generated/enums';
 
 /**
  * Payload stored INSIDE JWT
@@ -15,7 +15,7 @@ import { UserRole } from 'prisma/generated/enums';
  */
 interface JwtTokenPayload {
   sub: number; // userId
-  role: UserRole;
+  role: Role;
 }
 
 /**
@@ -23,7 +23,7 @@ interface JwtTokenPayload {
  */
 interface LoginUser {
   id: number;
-  role: UserRole;
+  role: Role;
 }
 
 @Injectable()

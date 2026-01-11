@@ -14,7 +14,7 @@ import { ConfigService } from '@nestjs/config';
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET')!,
         signOptions: {
-          expiresIn: config.get<number>('JWT_EXPIRES_IN', 900),
+          expiresIn: Number(config.get<number>('JWT_EXPIRES_IN') ?? 900),
         },
       }),
     }),

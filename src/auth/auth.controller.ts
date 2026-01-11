@@ -13,7 +13,7 @@ import { Public } from './public.decorator';
 import type { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
-  user?: { id: string; role: string };
+  user?: { id: number; role: string };
 }
 
 @Controller('auth')
@@ -52,7 +52,6 @@ export class AuthController {
     return { accessToken, user_id: user.id };
   }
 
-  @Public()
   @Post('refresh-token')
   refreshTokens(
     @Req() req: Request,
