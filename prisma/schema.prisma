@@ -15,46 +15,76 @@ datasource db {
   provider = "postgresql"
 }
 
-// ==============================
-// ENUMS
-// ==============================
-enum UserRole {
-  USER
-  LANDLORD
+enum Role {
   ADMIN
+  MANAGER
+  STAFF
 }
 
 model User {
-  id         Int      @id @default(autoincrement())
-  name       String
-  email      String   @unique
-  password   String
-  role       UserRole   // Admin, HR, Staff
-  department String   // HR, IT, Finance
-  isLocked   Boolean  @default(false)   @map("is_locked")
-  createdAt  DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  password     String
+  role         Role
+  departmentId Int      @map("department_id")
+  isLocked     Boolean  @default(false) @map("is_locked")
+  createdAt    DateTime @default(now())
 
-  feedbacks   Feedback[]
-  favorites   Favorite[]
-  logs        ActivityLog[]
+  department Department @relation(fields: [departmentId], references: [id])
+
+  feedbacks     Feedback[]
+  favorites     Favorite[]
+  logs          ActivityLog[]
   notifications Notification[]
-  versions    DocumentVersion[] @relation("UploadedVersions")
+  versions      DocumentVersion[] @relation("UploadedVersions")
 
   @@map("user")
 }
 
-model Document {
-  id          Int      @id @default(autoincrement())
-  title       String
+model Department {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
   description String?
-  department  String
-  createdAt   DateTime @default(now())
 
-  versions     DocumentVersion[]
-  permissions  DocumentPermission[]
-  favorites    Favorite[]
-  feedbacks    Feedback[]
-  logs         ActivityLog[]
+  users     User[]
+  documents Document[]
+  folders   Folder[]
+
+  createdAt DateTime @default(now())
+}
+
+model Folder {
+  id           Int    @id @default(autoincrement())
+  name         String
+  departmentId Int    @map("department_id")
+  parentId     Int?   @map("parent_id")
+
+  department Department @relation(fields: [departmentId], references: [id])
+  parent     Folder?    @relation("FolderTree", fields: [parentId], references: [id])
+  children   Folder[]   @relation("FolderTree")
+  documents  Document[]
+
+  createdAt DateTime @default(now())
+}
+
+model Document {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  folderId     Int      @map("folder_id")
+  departmentId Int      @map("department_id")
+  isArchived   Boolean  @default(false) @map("is_archived")
+  createdAt    DateTime @default(now())
+
+  folder     Folder     @relation(fields: [folderId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+
+  versions    DocumentVersion[]
+  permissions DocumentPermission[]
+  favorites   Favorite[]
+  feedbacks   Feedback[]
+  logs        ActivityLog[]
 
   @@map("document")
 }
@@ -64,64 +94,65 @@ model DocumentVersion {
   documentId Int      @map("document_id")
   version    String
   fileUrl    String   @map("file_url")
-  uploadedBy Int
+  uploadedBy Int      @map("uploaded_by")
   uploadedAt DateTime @default(now())
 
-  document   Document @relation(fields: [documentId], references: [id])
-  uploader   User     @relation("UploadedVersions", fields: [uploadedBy], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
+  uploader User     @relation("UploadedVersions", fields: [uploadedBy], references: [id])
 
   @@map("document_version")
-
 }
 
 model DocumentPermission {
-  id         Int @id @default(autoincrement())
+  id         Int  @id @default(autoincrement())
   documentId Int  @map("document_id")
-  role       String   // HR, Staff, Manager
+  role       Role
 
-  document   Document @relation(fields: [documentId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
+
+  @@unique([documentId, role])
 }
 
 model Favorite {
   id         Int @id @default(autoincrement())
-  userId     Int
-  documentId Int
+  userId     Int @map("user_id")
+  documentId Int @map("document_id")
 
-  user       User     @relation(fields: [userId], references: [id])
-  document   Document @relation(fields: [documentId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
 
   @@unique([userId, documentId])
 }
 
 model Feedback {
   id         Int      @id @default(autoincrement())
-  userId     Int
-  documentId Int
+  userId     Int      @map("user_id")
+  documentId Int      @map("document_id")
   message    String
   createdAt  DateTime @default(now())
 
-  user       User     @relation(fields: [userId], references: [id])
-  document   Document @relation(fields: [documentId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
 }
 
 model ActivityLog {
   id         Int      @id @default(autoincrement())
-  userId     Int
-  documentId Int?
+  userId     Int      @map("user_id")
+  documentId Int?     @map("document_id")
   action     String
   createdAt  DateTime @default(now())
 
-  user       User      @relation(fields: [userId], references: [id])
-  document   Document? @relation(fields: [documentId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  document Document? @relation(fields: [documentId], references: [id])
 }
 
 model Notification {
   id        Int      @id @default(autoincrement())
-  userId    Int
+  userId    Int      @map("user_id")
   title     String
   message   String
-  isRead    Boolean  @default(false)
+  isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
