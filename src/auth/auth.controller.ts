@@ -28,7 +28,7 @@ export class AuthController {
   async login(
     @Body('email') email: string,
     @Body('password') password: string,
-    @Res({ passthrough: true }) res: Response,
+    // @Res({ passthrough: true }) res: Response,
   ) {
     const user = await this.authService.validateUser(email, password);
     if (!user) throw new UnauthorizedException('Unauthorized');
@@ -40,16 +40,16 @@ export class AuthController {
     });
 
     // set refresh token in HttpOnly cookie
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: false, // no HTTPS on local
-      sameSite: 'lax', // allow cross-site from localhost:5173 → localhost:3000
-      path: '/', //  make cookie available globally
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    // res.cookie('refresh_token', refreshToken, {
+    //   httpOnly: true,
+    //   secure: false, // no HTTPS on local
+    //   sameSite: 'lax', // allow cross-site from localhost:5173 → localhost:3000
+    //   path: '/', //  make cookie available globally
+    //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    // });
 
     // return only access token
-    return { accessToken, user_id: user.id };
+    return { accessToken, refreshToken };
   }
 
   @Post('refresh-token')
