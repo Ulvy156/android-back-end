@@ -37,6 +37,5 @@ COPY --from=builder /app/prisma ./prisma
 USER node
 EXPOSE 3000
 
-# At runtime, the container WILL need the real DATABASE_URL 
-# passed in via docker-compose or your cloud provider.
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# We use --schema to be explicit for Prisma v7
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
