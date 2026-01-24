@@ -2,24 +2,18 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# enable pnpm
 RUN corepack enable
-
-# allow required build scripts
 RUN pnpm config set enable-pre-post-scripts true
 
-# dummy DB url ONLY for build
+# dummy env just to satisfy Prisma
 ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 
-# copy deps files
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# copy source
 COPY . .
 
-# prisma client + build
-RUN pnpm prisma generate
+RUN pnpm prisma generate --schema=prisma/schema.prisma
 RUN pnpm build
 
 # ---------- PROD STAGE ----------
@@ -27,15 +21,11 @@ FROM node:20-alpine
 WORKDIR /app
 
 RUN corepack enable
-
-# allow required build scripts
 RUN pnpm config set enable-pre-post-scripts true
 
-# install prod deps only
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile
 
-# copy build artifacts
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
