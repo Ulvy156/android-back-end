@@ -43,4 +43,4 @@ EXPOSE 3000
 
 # runtime: generate (if needed), run migrations & seed, then start app
 # use pnpm exec to avoid workspace resolution issues and avoid 'npx'.
-CMD ["sh", "-c", "pnpm exec prisma generate --schema=prisma/schema.prisma && pnpm exec prisma migrate deploy --schema=prisma/schema.prisma && pnpm exec prisma db seed --schema=prisma/schema.prisma && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema ./prisma/schema.prisma && node dist/main.js"]
