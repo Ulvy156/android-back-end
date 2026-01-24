@@ -5,20 +5,16 @@ WORKDIR /app
 # enable pnpm
 RUN corepack enable
 
-# copy lock + manifest
+# copy deps files
 COPY package.json pnpm-lock.yaml ./
-
-# install deps
 RUN pnpm install --frozen-lockfile
 
 # copy source
 COPY . .
 
-# prisma + build
+# prisma client + build
 RUN pnpm prisma generate
 RUN pnpm build
-RUN pnpm prisma migrate deploy
-RUN pnpm prisma db seed
 
 # ---------- PROD STAGE ----------
 FROM node:20-alpine
@@ -30,7 +26,7 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile
 
-# copy build output + prisma engine
+# copy build artifacts
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
