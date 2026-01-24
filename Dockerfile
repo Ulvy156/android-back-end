@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
 
 # 1. Setup workspace & install deps (The Cache layer)
 COPY package.json pnpm-lock.yaml ./
