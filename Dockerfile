@@ -3,45 +3,44 @@ FROM node:20-bullseye-slim AS builder
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 build-essential && \
-    rm -rf /var/lib/apt/lists/*
+    python3 \
+    build-essential \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
 
-# 1. Setup workspace & install deps (The Cache layer)
+# workspace + deps
 COPY package.json pnpm-lock.yaml ./
-RUN echo "packages:\n  - '.'" > pnpm-workspace.yaml
+RUN printf "packages:\n  - '.'\n" > pnpm-workspace.yaml
+RUN pnpm config set enable-pre-post-scripts true
 RUN pnpm install --frozen-lockfile
 
-# 2. Copy Prisma folder and GENERATE BEFORE BUILD
-# NestJS needs the generated types in node_modules to compile dist
+# prisma schema + generate (for TS build only)
 COPY prisma ./prisma/
-RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm prisma generate
+RUN DATABASE_URL="postgresql://dummy:dummy@127.0.0.1:5432/dummy" \
+    pnpm exec prisma generate --schema=prisma/schema.prisma
 
-# 3. Copy source and build
+# app source + build
 COPY . .
-# We force the workspace file AGAIN because 'COPY . .' might have deleted it
-RUN echo "packages:\n  - '.'" > pnpm-workspace.yaml
 RUN pnpm build
 
-# 4. Cleanup dev deps
+# prune dev deps
 RUN pnpm prune --prod
+
 
 # ================ RUNTIME STAGE ================
 FROM node:20-bullseye-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
+# copy runtime essentials only
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 USER node
 EXPOSE 3000
 
-
-# We explicitly pass the DATABASE_URL and the schema path to the binary.
-# This overrides any config-file confusion in Prisma v7.
-CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma && node dist/src/main.js"]
+# We point directly to the config file to stop Prisma from guessing
+CMD ["sh", "-c", "npx prisma migrate deploy --config ./prisma.config.ts && node dist/src/main.js"]
