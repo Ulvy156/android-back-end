@@ -37,5 +37,6 @@ COPY --from=builder /app/prisma ./prisma
 USER node
 EXPOSE 3000
 
-# We use --schema to be explicit for Prisma v7
-CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
+# We use the --schema flag to force Prisma to find the config, 
+# and ensure the shell passes the env vars through.
+CMD ["sh", "-c", "npx prisma migrate deploy --schema ./prisma/schema.prisma && node dist/main.js"]
