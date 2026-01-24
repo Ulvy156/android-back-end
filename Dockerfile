@@ -15,7 +15,7 @@ RUN pnpm install --frozen-lockfile
 # copy all files
 COPY . .
 
-RUN npx prisma generate
+RUN pnpm prisma generate
 # build NestJS app only
 RUN pnpm build
 
