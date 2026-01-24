@@ -5,6 +5,12 @@ WORKDIR /app
 # enable pnpm
 RUN corepack enable
 
+# allow required build scripts
+RUN pnpm config set enable-pre-post-scripts true
+
+# dummy DB url ONLY for build
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+
 # copy deps files
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
@@ -21,6 +27,9 @@ FROM node:20-alpine
 WORKDIR /app
 
 RUN corepack enable
+
+# allow required build scripts
+RUN pnpm config set enable-pre-post-scripts true
 
 # install prod deps only
 COPY package.json pnpm-lock.yaml ./
