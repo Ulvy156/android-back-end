@@ -6,34 +6,37 @@ WORKDIR /app
 RUN corepack enable
 RUN pnpm config set enable-pre-post-scripts true
 
-# deps
+# copy only lock + manifest for caching
 COPY package.json pnpm-lock.yaml ./
+
+# install all dependencies
 RUN pnpm install --frozen-lockfile
 
-# source
+# copy all files
 COPY . .
 
-# build NestJS only (NO prisma here)
+# build NestJS app only
 RUN pnpm build
 
-
-# ---------- PROD STAGE ----------
+# ---------- PRODUCTION STAGE ----------
 FROM node:20-alpine
 WORKDIR /app
 
 RUN corepack enable
 RUN pnpm config set enable-pre-post-scripts true
 
-# prod deps only
+# copy dep files
 COPY package.json pnpm-lock.yaml ./
+
+# install prod deps only
 RUN pnpm install --prod --frozen-lockfile
 
-# app files
+# copy build artifacts from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
-# Prisma runs at runtime when env vars exist
+# at startup: generate Prisma client, run migrations & seed, then start the app
 CMD ["sh", "-c", "pnpm prisma generate && pnpm prisma migrate deploy && pnpm prisma db seed && node dist/main.js"]
