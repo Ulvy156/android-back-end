@@ -1,13 +1,14 @@
-# ---------- BUILD STAGE ----------
+# ================== BUILD STAGE ==================
 FROM node:20-slim AS builder
 WORKDIR /app
 
-# enable pnpm
+# lock pnpm version (important)
 RUN corepack enable
+RUN corepack prepare pnpm@9.12.0 --activate
 
-# install deps (FULL deps, including prisma + ts)
+# install deps (FULL deps, incl prisma + ts)
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # copy source
 COPY . .
@@ -17,22 +18,23 @@ COPY . .
 RUN pnpm build
 
 
-# ---------- PRODUCTION STAGE ----------
-FROM node:20-alpine
+# ================== RUNTIME STAGE ==================
+FROM node:20-slim
 WORKDIR /app
 
 RUN corepack enable
+RUN corepack prepare pnpm@9.12.0 --activate
 
 # install prod deps (prisma MUST be in dependencies)
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod
 
-# copy build + prisma files
+# copy build output + prisma files
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
-# Prisma ONLY runs here (Render env exists here)
+# Prisma runs ONLY at runtime (DATABASE_URL exists here)
 CMD ["sh", "-c", "pnpm prisma generate && pnpm prisma migrate deploy && pnpm prisma db seed && node dist/main.js"]
