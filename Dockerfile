@@ -43,4 +43,4 @@ EXPOSE 3000
 
 # We explicitly pass the DATABASE_URL and the schema path to the binary.
 # This overrides any config-file confusion in Prisma v7.
-CMD ["sh", "-c", "pnpm prisma generate && node dist/src/main.js"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma && node dist/src/main.js"]
