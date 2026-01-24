@@ -11,6 +11,7 @@ COPY package.json pnpm-lock.yaml ./
 
 # install all dependencies
 RUN pnpm install --frozen-lockfile
+RUN pnpm approve-builds
 
 # copy all files
 COPY . .
@@ -31,6 +32,7 @@ COPY package.json pnpm-lock.yaml ./
 
 # install prod deps only
 RUN pnpm install --prod --frozen-lockfile
+RUN pnpm approve-builds
 
 # copy build artifacts from builder
 COPY --from=builder /app/dist ./dist
