@@ -1,40 +1,65 @@
 # ================ BUILD STAGE ================
 FROM node:20-bullseye-slim AS builder
+
 WORKDIR /app
 
+# Install build tools (for native deps + Prisma reliability)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 build-essential && \
-    rm -rf /var/lib/apt/lists/*
+    python3 \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+# Setup pnpm
+RUN corepack enable
+RUN corepack prepare pnpm@9.12.0 --activate
 
-# 1. Copy the core config files
+# Skip Prisma auto-generate in postinstall (avoids weird fails)
+ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
+
+# Copy dep files first for caching
 COPY package.json pnpm-lock.yaml ./
 
-# 2. THE FIX: Create a workspace file if it doesn't exist 
-# This tells pnpm "Yes, the current folder is the only package"
-RUN echo "packages:\n  - '.'" > pnpm-workspace.yaml
-
-COPY prisma ./prisma/
-
-# 3. Now install should work without the "packages field" error
+# Install ALL deps (dev included for generate + build)
 RUN pnpm install --frozen-lockfile
 
-# 4. Copy the rest and build
+# Copy Prisma schema + source
+COPY prisma ./prisma/
 COPY . .
-RUN pnpm build
+
+# Generate Prisma Client (only here!)
 RUN pnpm prisma generate
-RUN pnpm prune --prod
+
+# Build the NestJS app
+RUN pnpm build
 
 # ================ RUNTIME STAGE ================
-# (Keep the runtime stage exactly the same as before)
 FROM node:20-bullseye-slim
+
 WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app/node_modules ./node_modules
+
+# Minimal runtime deps (drop python/build-essential if no bcrypt/sharp/etc)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# Setup pnpm
+RUN corepack enable
+RUN corepack prepare pnpm@9.12.0 --activate
+
+# Copy dep files + install PROD deps only
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod --frozen-lockfile
+
+# Copy built stuff + Prisma schema (needed for migrate deploy)
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
-USER node
+
+# If Prisma client missing at runtime (rare with pnpm), uncomment these:
+# COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+ENV NODE_ENV=production
+
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+
+# Startup: migrate + seed + run app (no generate needed!)
+CMD ["sh", "-c", "pnpm prisma migrate deploy && pnpm prisma db seed && node dist/main.js"]
