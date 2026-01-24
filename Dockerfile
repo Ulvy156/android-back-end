@@ -15,6 +15,7 @@ RUN pnpm install --frozen-lockfile
 # copy all files
 COPY . .
 
+RUN npx prisma generate
 # build NestJS app only
 RUN pnpm build
 
@@ -39,4 +40,4 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # at startup: generate Prisma client, run migrations & seed, then start the app
-CMD ["sh", "-c", "pnpm prisma generate && pnpm prisma migrate deploy && pnpm prisma db seed && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && node dist/main.js"]
