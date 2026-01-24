@@ -41,6 +41,6 @@ USER node
 EXPOSE 3000
 
 
-# runtime: generate (if needed), run migrations & seed, then start app
-# use pnpm exec to avoid workspace resolution issues and avoid 'npx'.
-CMD ["sh", "-c", "npx prisma migrate deploy --schema ./prisma/schema.prisma && node dist/src/main.js"]
+# We explicitly pass the DATABASE_URL and the schema path to the binary.
+# This overrides any config-file confusion in Prisma v7.
+CMD ["sh", "-c", "DATABASE_URL=$DATABASE_URL ./node_modules/.bin/prisma migrate deploy --schema ./prisma/schema.prisma && node dist/src/main.js"]
