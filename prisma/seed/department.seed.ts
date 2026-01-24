@@ -13,5 +13,7 @@ export async function seedDepartments(prisma: PrismaClient) {
     data: { name: 'FINANCE', description: 'Finance Department' },
   });
 
+  console.log('Departments seeded');
+
   return { hr, it, finance };
 }

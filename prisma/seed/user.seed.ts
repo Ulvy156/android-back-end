@@ -48,5 +48,7 @@ export async function seedUsers(
     },
   });
 
+  console.log('Users seeded');
+
   return { admin, hrManager, itManager, hrStaff };
 }
