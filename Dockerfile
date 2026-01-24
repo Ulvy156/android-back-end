@@ -1,5 +1,5 @@
 # ================== BUILD STAGE ==================
-FROM node:20-slim AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # --- system deps for native modules (bcrypt, esbuild) ---
@@ -20,12 +20,11 @@ RUN pnpm install
 COPY . .
 
 # --- build NestJS ONLY ---
-# ❌ NO PRISMA HERE
 RUN pnpm build
 
 
 # ================== RUNTIME STAGE ==================
-FROM node:20-slim
+FROM node:20-alpine
 WORKDIR /app
 
 # --- system deps (bcrypt runtime safety) ---
