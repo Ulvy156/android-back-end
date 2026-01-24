@@ -10,6 +10,6 @@ export default defineConfig({
     seed: 'tsx prisma/seed/index.ts',
   },
   datasource: {
-    url: process.env.DATABASE_URL,
+    url: 'postgresql://android_backend_user:EVRcjY9VBLFPz3sFh9jTsshMHbCURmWC@dpg-d5q29u75r7bs738a9pd0-a:5432/android_backend',
   },
 });

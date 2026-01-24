@@ -43,4 +43,4 @@ USER node
 EXPOSE 3000
 
 # We point directly to the config file to stop Prisma from guessing
-CMD ["sh", "-c", "npx prisma migrate deploy --config ./prisma.config.ts && node dist/src/main.js"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/src/main.js"]
