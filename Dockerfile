@@ -1,56 +1,47 @@
 # ================ BUILD STAGE ================
 FROM node:20-bullseye-slim AS builder
-
 WORKDIR /app
 
-# system deps for native modules + prisma engine handling
+# System deps for native modules (bcrypt, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+    python3 build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
-# pnpm
-RUN corepack enable
-RUN corepack prepare pnpm@9.12.0 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
-# deps (full, incl dev for prisma generate)
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-
-# copy + generate + build
 COPY prisma ./prisma/
+
+# 1. Install all deps and generate the Prisma Client
+RUN pnpm install --frozen-lockfile
+RUN pnpm prisma generate
+
 COPY . .
-RUN pnpm prisma generate   # or npx prisma generate if pnpm bin acts weird
+# 2. Build the NestJS app
 RUN pnpm build
+
+# 3. Prune devDependencies to keep the image slim
+RUN pnpm prune --prod
 
 # ================ RUNTIME STAGE ================
 FROM node:20-bullseye-slim
-
 WORKDIR /app
 
-# minimal runtime deps (only if bcrypt/sharp/etc needs it; drop python3 if not)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+# Set to production
+ENV NODE_ENV=production
 
-# pnpm
-RUN corepack enable
-RUN corepack prepare pnpm@9.12.0 --activate
-
-# prod deps only
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile
-
-# copy artifacts + prisma schema (for migrate) + generated client is in node_modules
+# 4. Copy only what's needed for execution
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 
-# If client still missing (rare with pnpm), add this explicit copy:
-# COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-# COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-
-ENV NODE_ENV=production
+# 5. Security: Run as non-root user
+USER node
 
 EXPOSE 3000
 
-# No generate needed anymore!
-CMD ["sh", "-c", "pnpm prisma migrate deploy && pnpm prisma db seed && node dist/main.js"]
+# 6. Optimized startup
+# Use 'prisma migrate deploy' for prod (it's faster/safer than 'dev')
+# Note: In a scaled environment, move migrations to your CI/CD pipeline
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
