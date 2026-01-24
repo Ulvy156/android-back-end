@@ -61,7 +61,7 @@ export class AuthService {
   /**
    * Issue access + refresh tokens
    */
-  login(user: LoginUser) {
+  async login(user: LoginUser) {
     const payload: JwtTokenPayload = {
       sub: user.id,
       role: user.role,
@@ -69,7 +69,7 @@ export class AuthService {
 
     const accessToken = this.generateAccessToken(payload);
 
-    const refreshToken = this.generateRefreshToken(payload);
+    const refreshToken = await this.generateRefreshToken(payload);
 
     return {
       accessToken,

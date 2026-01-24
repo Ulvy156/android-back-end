@@ -34,7 +34,7 @@ export class AuthController {
     if (!user) throw new UnauthorizedException('Unauthorized');
 
     // generate tokens using service
-    const { accessToken, refreshToken } = this.authService.login({
+    const { accessToken, refreshToken } = await this.authService.login({
       id: user.id,
       role: user.role,
     });
