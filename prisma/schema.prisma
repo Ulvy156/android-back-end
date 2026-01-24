@@ -7,7 +7,7 @@
 // GENERATOR & DATASOURCE
 // ==============================
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "generated"
   moduleFormat = "cjs"
 }
